@@ -1,26 +1,23 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { ThemeProvider } from 'emotion-theming';
+import GlobalStyle from './components/GlobalStyle';
+import { Theme } from './Theme';
+import { Card, Button } from 'rebass';
 
 const App: React.FC = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={Theme}>
+      <>
+        <GlobalStyle />
+        <div className="App">
+          <Card fontSize={[1, 2, 3]} margin={[2, 3, 4]}>
+            hi
+          </Card>
+          <Button variant="secondary">Button</Button>
+        </div>
+      </>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
