@@ -2,7 +2,7 @@ import React from 'react';
 import { ThemeProvider } from 'emotion-theming';
 import GlobalStyle from './components/GlobalStyle';
 import { Theme } from './Theme';
-import { Card, Button } from 'rebass';
+import Router from './components/Router';
 
 const App: React.FC = () => {
   return (
@@ -10,10 +10,7 @@ const App: React.FC = () => {
       <>
         <GlobalStyle />
         <div className="App">
-          <Card fontSize={[1, 2, 3]} margin={[2, 3, 4]}>
-            hi
-          </Card>
-          <Button variant="secondary">Button</Button>
+          <Router />
         </div>
       </>
     </ThemeProvider>
