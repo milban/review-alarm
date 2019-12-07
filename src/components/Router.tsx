@@ -11,7 +11,7 @@ import Home from '../pages/Home';
 import Login from '../pages/Login';
 
 import useIsAuth from '../utils/useIsAuth';
-import Protected from '../pages/Protected';
+import ReviewResource from '../pages/ReviewResource';
 
 interface IRouteProps extends RouteProps {
   component: React.FC<any>;
@@ -46,7 +46,7 @@ export default function() {
       <Switch>
         <Route exact path="/" component={Home} />
         <Route path="/login" component={Login} />
-        <PrivateRoute path="/protected" component={Protected} />
+        <PrivateRoute path="/reviewresource" component={ReviewResource} />
         <Redirect from="*" to="/" />
       </Switch>
     </Router>

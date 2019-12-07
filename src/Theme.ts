@@ -100,6 +100,11 @@ const Theme: DefaultTheme = {
       color: 'background',
       bg: 'secondary',
     },
+    flat: {
+      bg: 'white',
+      outline: 'none',
+      color: 'black',
+    },
   },
   styles: {
     root: {
