@@ -24,10 +24,8 @@ function Login() {
           .get()
           .then(doc => {
             if (doc.exists) {
-              console.log('aleady signed user');
               history.push(`/${userId}`);
             } else {
-              console.log('not aleady signed user');
               db.collection('users')
                 .doc(email!)
                 .set({
