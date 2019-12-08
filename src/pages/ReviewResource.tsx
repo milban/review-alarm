@@ -1,8 +1,9 @@
 import React, { useState, useEffect, MouseEvent } from 'react';
 import WYSIWYG from '../components/WYSIWYG';
 import useUser from '../utils/useUser';
-import { storage } from '../firebase';
+import { storage, db } from '../firebase';
 import { BoxProps, Button, Flex } from 'rebass';
+import uniqueId from '../utils/uniqueId';
 
 const Container = ({ children, ...rest }: BoxProps) => (
   <Flex {...rest} padding="1rem" height="100%" fontSize={[2, 3, 4]}>
@@ -12,36 +13,84 @@ const Container = ({ children, ...rest }: BoxProps) => (
 
 function ReviewResource() {
   const [userData, isAuth, loading] = useUser();
-  const [contentsList, setContentsList] = useState<string[]>([]);
-  const [currentContentTitle, setCurrentContentTitle] = useState('');
+  const [contentIdList, setContentIdList] = useState<string[]>([]);
+  const [contentTitleList, setContentTitleList] = useState<string[]>([]);
+  const [contentList, setContentList] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [currentContentId, setCurrentContentId] = useState('');
+
+  const getContentsList = async () => {
+    const email = userData!.email!;
+    const { items } = await storage
+      .ref('review_contents')
+      .child(email)
+      .list();
+    const contentIds = items.map(item => item.name);
+    setContentIdList(contentIds);
+
+    db.collection('users')
+      .doc(email)
+      .collection('contents')
+      .get()
+      .then(snapshot => {
+        const tmpContentList: Map<string, string> = new Map();
+        snapshot.forEach(doc => {
+          tmpContentList.set(doc.id, doc.data().title);
+        });
+        setContentList(tmpContentList);
+      });
+  };
 
   useEffect(() => {
-    const getContentsList = async () => {
-      const email = userData!.email!;
-      const { items } = await storage
-        .ref('review_contents')
-        .child(email)
-        .list();
-      const contentTitles = items.map(item => item.name);
-      console.log(contentTitles);
-      setContentsList(contentTitles);
-    };
+    if (contentList.size !== 0) {
+      const tmpTitleList: string[] = [];
+      contentList.forEach((value, key) => {
+        tmpTitleList.push(value);
+      });
+      setContentTitleList(tmpTitleList);
+    }
+  }, [contentList]);
+
+  useEffect(() => {
     if (!loading) {
       getContentsList();
     }
   }, [loading]);
 
   useEffect(() => {
-    if (contentsList.length !== 0) {
-      setCurrentContentTitle(contentsList[0]);
+    if (contentIdList.length !== 0) {
+      setCurrentContentId(contentIdList[0]);
     }
-  }, [contentsList]);
+  }, [contentIdList]);
 
   const getContent = (e: MouseEvent) => {
-    setCurrentContentTitle((e.target as Element).textContent!);
+    const targetTitle = (e.target as Element).textContent!;
+    contentList.forEach((value, key) => {
+      if (value === targetTitle) {
+        setCurrentContentId(key);
+      }
+    });
   };
 
-  const createContent = () => {};
+  const createContent = () => {
+    const email = userData!.email!;
+    const contentUid = uniqueId();
+    storage
+      .ref('review_contents')
+      .child(`${email}/${contentUid}`)
+      .putString('')
+      .then(() => {
+        db.collection('users')
+          .doc(email)
+          .collection('contents')
+          .doc(contentUid)
+          .set({ title: 'new content' })
+          .then(() => {
+            getContentsList();
+          });
+      });
+  };
 
   if (loading) {
     return <div>LOADING...</div>;
@@ -51,24 +100,33 @@ function ReviewResource() {
         <nav
           style={{
             display: 'flex',
-            height: '90vh',
+            height: '80vh',
             flexDirection: 'column',
-            alignItems: 'flex-start',
             padding: '1rem',
             borderRight: '1px solid rgba(0, 0, 0, 0.2)',
             overflow: 'scrollY',
           }}
           onClick={getContent}
         >
-          <Button onClick={createContent}>New content</Button>
-          {contentsList.map((content, idx) => (
-            <Button key={idx} variant="flat">
-              {content}
+          <Button mb={3} onClick={createContent}>
+            New content
+          </Button>
+          {contentTitleList.map((title, idx) => (
+            <Button
+              key={idx}
+              variant="flat"
+              sx={{
+                width: '100%',
+                textAlign: 'left',
+                ':hover': { backgroundColor: 'rgba(0,0,0,0.2)' },
+              }}
+            >
+              {title}
             </Button>
           ))}
         </nav>
-        {currentContentTitle !== '' && (
-          <WYSIWYG userData={userData!} contentTitle={currentContentTitle} />
+        {currentContentId !== '' && (
+          <WYSIWYG userData={userData!} contentId={currentContentId} />
         )}
       </Container>
     );

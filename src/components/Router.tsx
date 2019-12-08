@@ -12,6 +12,7 @@ import Login from '../pages/Login';
 
 import useUser from '../utils/useUser';
 import ReviewResource from '../pages/ReviewResource';
+import Header from './Header';
 
 interface IRouteProps extends RouteProps {
   component: React.FC<any>;
@@ -42,11 +43,12 @@ const PrivateRoute = ({ component: Component, ...rest }: IRouteProps) => {
 
 export default function() {
   return (
-    <Router>
+    <Router forceRefresh={true}>
+      <Header />
       <Switch>
         <Route exact path="/" component={Home} />
         <Route path="/login" component={Login} />
-        <PrivateRoute path="/reviewresource" component={ReviewResource} />
+        <PrivateRoute path="/:userid" component={ReviewResource} />
         <Redirect from="*" to="/" />
       </Switch>
     </Router>

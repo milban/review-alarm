@@ -12,7 +12,7 @@ function LoginBtn() {
       .auth()
       .signOut()
       .then(() => {
-        history.replace('/logout');
+        history.push('/');
       })
       .catch(error => {
         console.log(error);

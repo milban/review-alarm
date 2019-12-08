@@ -6,9 +6,10 @@ import {
   DraftEditorCommand,
   convertToRaw,
   convertFromRaw,
+  RawDraftContentState,
 } from 'draft-js';
 import { Box, Button, BoxProps, ButtonProps } from 'rebass';
-import { storage } from '../firebase';
+import { storage, db } from '../firebase';
 import firebase from 'firebase';
 import axios from 'axios';
 
@@ -28,14 +29,12 @@ const EditorRichUtilBtn = ({ children, ...rest }: ButtonProps) => (
 
 function WYSIWYG({
   userData,
-  contentTitle,
+  contentId,
 }: {
   userData: firebase.User;
-  contentTitle: string;
+  contentId: string;
 }) {
-  const [editorState, setEditorState] = useState(
-    EditorState.moveFocusToEnd(EditorState.createEmpty()),
-  );
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [contentLoading, setContentLoading] = useState(true);
   const email = userData.email!;
 
@@ -44,26 +43,35 @@ function WYSIWYG({
       setContentLoading(true);
       const url = await storage
         .ref('review_contents')
-        .child(`${email}/${contentTitle}`)
+        .child(`${email}/${contentId}`)
         .getDownloadURL();
-      const { data: RawDraftContentState } = await axios.get(url);
-      setEditorState(
-        EditorState.createWithContent(convertFromRaw(RawDraftContentState)),
-      );
+      const { data } = await axios.get(url);
+      if (data !== '') {
+        setEditorState(EditorState.createWithContent(convertFromRaw(data)));
+      } else {
+        setEditorState(EditorState.createEmpty());
+      }
       setContentLoading(false);
     };
     getContentFromURL();
-  }, [contentTitle]);
+  }, [contentId]);
 
   const onMouseDownSave = () => {
     if (!editorState.isEmpty) {
       const contentState = editorState.getCurrentContent();
       const stringfyContentState = JSON.stringify(convertToRaw(contentState));
       const title = contentState.getPlainText().split('\n')[0];
-      storage
-        .ref('review_contents')
-        .child(`${email}/${title}`)
-        .putString(stringfyContentState);
+      db.collection('users')
+        .doc(email)
+        .collection('contents')
+        .doc(contentId)
+        .set({ title })
+        .then(() => {
+          storage
+            .ref('review_contents')
+            .child(`${email}/${contentId}`)
+            .putString(stringfyContentState);
+        });
     }
   };
 
