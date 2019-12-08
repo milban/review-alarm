@@ -1,4 +1,4 @@
-import React, { useState, MouseEvent, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Editor,
   EditorState,
@@ -12,8 +12,10 @@ import { storage } from '../firebase';
 import firebase from 'firebase';
 import axios from 'axios';
 
+import '../../node_modules/draft-js/dist/Draft.css';
+
 const EditorContainer = ({ children, ...rest }: BoxProps) => (
-  <Box {...rest} padding="1rem" fontSize={[2, 3, 4]}>
+  <Box {...rest} padding="1rem" fontSize={[2, 3, 4]} sx={{ lineHeight: '1.5' }}>
     {children}
   </Box>
 );
@@ -24,26 +26,46 @@ const EditorRichUtilBtn = ({ children, ...rest }: ButtonProps) => (
   </Button>
 );
 
-function WYSIWYG() {
+function WYSIWYG({
+  userData,
+  contentTitle,
+}: {
+  userData: firebase.User;
+  contentTitle: string;
+}) {
   const [editorState, setEditorState] = useState(
     EditorState.moveFocusToEnd(EditorState.createEmpty()),
   );
+  const [contentLoading, setContentLoading] = useState(true);
+  const email = userData.email!;
 
   useEffect(() => {
     const getContentFromURL = async () => {
+      setContentLoading(true);
       const url = await storage
-        .ref()
-        .child('test/testtest')
+        .ref('review_contents')
+        .child(`${email}/${contentTitle}`)
         .getDownloadURL();
-      console.log(url);
       const { data: RawDraftContentState } = await axios.get(url);
-      console.log(RawDraftContentState);
       setEditorState(
         EditorState.createWithContent(convertFromRaw(RawDraftContentState)),
       );
+      setContentLoading(false);
     };
     getContentFromURL();
-  }, []);
+  }, [contentTitle]);
+
+  const onMouseDownSave = () => {
+    if (!editorState.isEmpty) {
+      const contentState = editorState.getCurrentContent();
+      const stringfyContentState = JSON.stringify(convertToRaw(contentState));
+      const title = contentState.getPlainText().split('\n')[0];
+      storage
+        .ref('review_contents')
+        .child(`${email}/${title}`)
+        .putString(stringfyContentState);
+    }
+  };
 
   const handleKeyCommand = (command: DraftEditorCommand) => {
     const newState = RichUtils.handleKeyCommand(editorState, command);
@@ -70,26 +92,9 @@ function WYSIWYG() {
     setEditorState(RichUtils.toggleInlineStyle(editorState, 'STRIKETHROUGH'));
   };
 
-  const onMouseDownSave = (e: MouseEvent) => {
-    console.log(e.target);
-    if (!editorState.isEmpty) {
-      const contentState = editorState.getCurrentContent();
-      const stringfyContentState = JSON.stringify(convertToRaw(contentState));
-      console.log(stringfyContentState);
-      storage
-        .ref()
-        .child('test/testtest')
-        .putString(stringfyContentState)
-        .on('state_changed', snapshot => {
-          switch (snapshot.state) {
-            case firebase.storage.TaskState.RUNNING:
-              break;
-          }
-        });
-    }
-  };
-
-  return (
+  return contentLoading ? (
+    <div>Loading...</div>
+  ) : (
     <EditorContainer>
       <div style={{ marginBottom: '1rem' }}>
         <EditorRichUtilBtn onClick={onUnderlineClick}>__</EditorRichUtilBtn>
@@ -108,9 +113,10 @@ function WYSIWYG() {
         handleKeyCommand={handleKeyCommand}
         onChange={setEditorState}
         spellCheck
+        placeholder="Title"
       />
-      <div>
-        <Button onMouseDown={onMouseDownSave}>Save</Button>
+      <div style={{ marginTop: '1rem' }}>
+        <Button onMouseDown={onMouseDownSave}>save</Button>
       </div>
     </EditorContainer>
   );

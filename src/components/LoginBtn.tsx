@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { Button } from 'rebass';
-import useIsAuth from '../utils/useIsAuth';
+import useUser from '../utils/useUser';
 import firebaseApp from '../firebase';
 
 function LoginBtn() {
-  const [isAuth, loading] = useIsAuth();
+  const [userData, isAuth, loading] = useUser();
   let history = useHistory();
   const onClickLogout = () => {
     firebaseApp

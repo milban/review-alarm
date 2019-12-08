@@ -104,6 +104,7 @@ const Theme: DefaultTheme = {
       bg: 'white',
       outline: 'none',
       color: 'black',
+      cursor: 'pointer',
     },
   },
   styles: {

@@ -10,7 +10,7 @@ import {
 import Home from '../pages/Home';
 import Login from '../pages/Login';
 
-import useIsAuth from '../utils/useIsAuth';
+import useUser from '../utils/useUser';
 import ReviewResource from '../pages/ReviewResource';
 
 interface IRouteProps extends RouteProps {
@@ -18,7 +18,7 @@ interface IRouteProps extends RouteProps {
 }
 
 const PrivateRoute = ({ component: Component, ...rest }: IRouteProps) => {
-  const [isAuth, loading] = useIsAuth();
+  const [userData, isAuth, loading] = useUser();
 
   if (loading) {
     return <div>LOADING...</div>;
